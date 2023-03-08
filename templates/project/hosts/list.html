@@ -119,7 +119,7 @@
 
         });
 
-        search_visibility = false;
+        search_visibility = true;
 
         function swap_search() {
             if (!search_visibility) {
@@ -409,7 +409,7 @@
                         comment=request.args.get('comment'), threats=request.args.getlist('threats[]') ) %}
             <h1 class="ui dividing header">Hosts: {{ len(host_array) }}</h1>
             <div class="ui container" style="width: 100%; float: left;">
-                <form class="ui form" id="search_form" style="display: none; min-height: 0px;" method="get"
+                <form class="ui form" id="search_form" method="get"
                       action="/project/{{ current_project['id'] }}/hosts/">
                     <div class="ui grid">
                         <div class="four wide column">
@@ -419,6 +419,7 @@
                                 <select id="network_elem" class="ui fluid search dropdown" multiple="">
                                     <option value="">Networks</option>
                                     {% set networks = db.select_project_networks(current_project['id']) %}
+                                    <option value="*" {% if 'network' in request.args and "*" in request.args['network'] %}selected {% endif %}>Any network</option>
                                     {% for network in networks %}
                                         <option value="{{ network['id'] }}"
                                                 {% if 'network' in request.args and network['id'] in request.args['network'] %}selected {% endif %}>{{ network['ip'] }}/{{ network['mask'] }}
@@ -435,6 +436,7 @@
                                     {% if 'port' in request.args and request.args['port'] %}
                                         {% set port_arr = request.args['port'].split(',') %}
                                     {% endif %}}
+                                    <option value="*" {% if '*' in port_arr %} selected {% endif %}>Any port</option>
                                     {% set ports = db.select_project_ports_unique(current_project['id']) %}
                                     {% for port in ports %}
                                         {% if port['is_tcp'] %}
@@ -601,7 +603,7 @@
                 </form>
                 <button class="ui button blue" id="hide_button" style="float:left;"
                         onclick="swap_search()">
-                    <i class="angle double down icon"></i>Show
+                    <i class="angle double up icon"></i>Hide
                 </button>
                 <a style="margin-left: 15px; float: right; margin-right: 28px;" class="ui vertical animated button blue"
                    href="new_host">

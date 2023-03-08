@@ -1471,6 +1471,12 @@ class Database:
                                                        current_network['mask']))
         return
 
+    def select_all_networks(self):
+        self.execute(
+            '''SELECT * FROM Networks''')
+        result = self.return_arr_dict()
+        return result
+
     def select_network(self, network_id):
         self.execute(
             '''SELECT * FROM Networks WHERE id=?''',
@@ -2319,16 +2325,21 @@ class Database:
             network_result = all_hosts
         else:
             network_result = []
-            for network_id in network.split(','):
-                if is_valid_uuid(network_id):
-                    network = self.select_network(network_id)[0]
-                    ip = network['ip']
-                    mask = network['mask']
-                    subnet = '{}/{}'.format(ip, mask)
-                    for host in all_hosts:
-                        if ipaddress.ip_address(host['ip']) in \
-                                ipaddress.ip_network(subnet, False):
-                            network_result.append(host)
+            networks = network.split(',')
+            
+            if '*' in networks:
+                networks = self.select_all_networks()
+            else:
+                networks = [self.select_network(network_id)[0] for network_id in networks if is_valid_uuid(network_id)]
+            
+            for network in networks:
+                ip = network['ip']
+                mask = network['mask']
+                subnet = '{}/{}'.format(ip, mask)
+                for host in all_hosts:
+                    if ipaddress.ip_address(host['ip']) in \
+                            ipaddress.ip_network(subnet, False):
+                        network_result.append(host)
 
         # issue filter
         if not issue_name:
@@ -2383,16 +2394,23 @@ class Database:
         else:
             service = service.lower() if service else ''
             service_regex = '|'.join(service.split(','))
+
             if port:
                 port_array = port.split(',')
-                port_regexp = '|'.join(
-                    ['^' + str(int(port.split('/')[0])) + '/' + \
-                     str(int(port.split('/')[1] == 'tcp')) + '$' \
-                     for port in port_array])
+
+                if '*' in port_array:
+                    port_regexp = '^([^0]|0[^/]|0/[^1]).*$'
+
+                else:
+                    port_regexp = '|'.join(
+                        ['^' + str(int(port.split('/')[0])) + '/' + \
+                         str(int(port.split('/')[1] == 'tcp')) + '$' \
+                         for port in port_array])
+
                 if self.db_type == 'sqlite3':
                     self.execute(
                         '''SELECT * FROM Hosts WHERE project_id=? and id IN 
-                        (SELECT host_id FROM Ports WHERE (port || '/' || is_tcp) REGEXP ? and 
+                        (SELECT host_id FROM Ports WHERE (port || '/' || is_tcp) REGEXP ? and
                         LOWER(service) REGEXP ?)''',
                         (project_id, port_regexp, service_regex))
                 elif self.db_type == 'postgres':
