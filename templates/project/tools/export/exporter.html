@@ -303,6 +303,7 @@
                                 <select id="network_elem" class="ui fluid search dropdown" multiple="">
                                     <option value="">Networks</option>
                                     {% set networks = db.select_project_networks(current_project['id']) %}
+                                    <option value="*" {% if 'network' in request.args and "*" in request.args['network'] %}selected {% endif %}>Any network</option>
                                     {% for network in networks %}
                                         <option id="network_select" value="{{ network['id'] }}"
                                                 {% if 'network' in request.args and network['id'] in request.args['network'] %}selected {% endif %}>{{ network['ip'] }}/{{ network['mask'] }}</option>
@@ -318,6 +319,7 @@
                                     {% if 'port' in request.args and request.args['port'] %}
                                         {% set port_arr = request.args['port'].split(',') %}
                                     {% endif %}
+                                    <option value="*" {% if '*' in port_arr %} selected {% endif %}>Any port</option>
                                     {% set ports = db.select_project_ports_unique(current_project['id']) %}
                                     {% for port in ports %}
                                         {% if port['is_tcp'] %}

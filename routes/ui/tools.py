@@ -1303,7 +1303,10 @@ def exporter_page_form(project_id, current_project, current_user):
 
     ports_array = []
     if form.port.data:
-        ports_array = [[int(port.split('/')[0]), port.split('/')[1] == 'tcp']
+        if '*' in form.port.data:
+            ports_array = ['*']
+        else:
+            ports_array = [[int(port.split('/')[0]), port.split('/')[1] == 'tcp']
                        for port in form.port.data.split(',')]
 
     prefix = form.prefix.data
@@ -1352,7 +1355,7 @@ def exporter_page_form(project_id, current_project, current_user):
                 hostnames = db.select_ip_hostnames(host['id'])
                 for port in ports:
                     if (not form.port.data) or (
-                            [port['port'], port['is_tcp']] in ports_array):
+                            [port['port'], port['is_tcp']] in ports_array) or ports_array == ['*']:
                         if form.service.data == '' or form.service.data == port['service']:
                             if (not form.issue_name.data) or (
                                     port['id'] in port_ids):
